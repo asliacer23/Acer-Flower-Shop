@@ -20,21 +20,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
-  // 🧩 Load cart depending on login state
+  // Load cart from Supabase when user is logged in
   useEffect(() => {
+    if (!user?.email) {
+      setCart([]);
+      return;
+    }
+
     const loadCart = async () => {
-      setIsLoading(true);
-
       try {
-        if (!user?.email) {
-          // Guest user → load from localStorage (temporary)
-          const localCart = localStorage.getItem('guest_cart');
-          setCart(localCart ? JSON.parse(localCart) : []);
-          setIsLoading(false);
-          return;
-        }
-
-        // Logged-in user → load from Supabase
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('carts')
           .select('items')
@@ -46,7 +41,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data?.items) {
           setCart(data.items as CartItem[]);
         } else {
-          // No cart yet → create empty one
+          // Create empty cart for new user
           await supabase.from('carts').insert([{ user_email: user.email, items: [] }]);
           setCart([]);
         }
@@ -61,21 +56,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadCart();
   }, [user?.email]);
 
-  // 💾 Save cart depending on login state
+  // Save cart to Supabase when it changes (including when empty)
   useEffect(() => {
-    if (isLoading) return;
+    if (!user?.email || isLoading) return;
 
-    if (!user?.email) {
-      // Guest → store in localStorage (temporary)
-      localStorage.setItem('guest_cart', JSON.stringify(cart));
-      return;
-    }
-
-    // Logged-in → save to Supabase
     const saveCart = async () => {
       try {
-        if (!Array.isArray(cart)) return;
-
         const serialized = cart.map(item => ({
           id: item.id,
           name: item.name,
@@ -85,7 +71,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           category: item.category || null,
         }));
 
-        const { error } = await supabase
+        await supabase
           .from('carts')
           .upsert(
             {
@@ -96,8 +82,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             { onConflict: 'user_email' }
           );
 
-        if (error) console.error('Error saving cart:', error);
-        else console.log('✅ Cart saved to Supabase:', serialized);
+        console.log('✅ Cart saved:', serialized);
       } catch (err) {
         console.error('Error saving cart:', err);
       }
@@ -107,8 +92,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearTimeout(timer);
   }, [cart, user?.email, isLoading]);
 
-  // 🛒 Add item
+  // Add item to cart (ONLY if logged in)
   const addToCart = (product: Product, quantity = 1) => {
+    if (!user?.email) {
+      throw new Error('You must be logged in to add items to cart');
+    }
+
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -122,12 +111,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // ❌ Remove item
+  // Remove item
   const removeFromCart = (productId: string) => {
     setCart(prev => prev.filter(item => item.id !== productId));
   };
 
-  // 🔄 Update quantity
+  // Update quantity
   const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
@@ -140,13 +129,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
-  // 🧹 Clear cart
+  // Clear cart
   const clearCart = () => {
     setCart([]);
-    if (!user?.email) localStorage.removeItem('guest_cart');
   };
-
-  // 💰 Total
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (

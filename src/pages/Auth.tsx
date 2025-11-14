@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Flower2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const [params] = useSearchParams();
+
+  const { signIn, signUp, user, isLoading } = useAuth();
   const { toast } = useToast();
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -20,42 +22,70 @@ export default function Auth() {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  // -------- Handle "verified=true" after email confirmation --------
+  useEffect(() => {
+    if (params.get("verified") === "true") {
+      toast({
+        title: "Email verified!",
+        description: "You can now log in to your account.",
+      });
+    }
+  }, []);
+
+  // -------- REDIRECT IF USER IS ALREADY LOGGED IN --------
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/profile');
+    }
+  }, [user, isLoading, navigate]);
+
+  // ------------------ LOGIN ------------------
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      await signIn(loginEmail, loginPassword);
-      toast({ title: 'Welcome back!' });
-      navigate('/');
-    } catch (error) {
+    setLoading(true);
+
+    const res = await signIn(loginEmail, loginPassword);
+
+    if (!res.success) {
       toast({
-        title: 'Login failed',
-        description: 'Please check your credentials.',
-        variant: 'destructive',
+        title: "Login failed",
+        description: res.error,
+        variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+    } else {
+      toast({ title: "Welcome back!" });
     }
+
+    setLoading(false);
   };
 
+  // ------------------ SIGNUP ------------------
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      await signUp(signupEmail, signupPassword, signupName);
-      toast({ title: 'Account created successfully!' });
-      navigate('/');
-    } catch (error) {
+    setLoading(true);
+
+    const res = await signUp(signupEmail, signupPassword, signupName);
+
+    if (!res.success) {
       toast({
-        title: 'Signup failed',
-        description: 'Please try again.',
-        variant: 'destructive',
+        title: "Signup failed",
+        description: res.error,
+        variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+    } else {
+      toast({
+        title: "Verification email sent!",
+        description: "Check your inbox to confirm your account.",
+      });
+
+      setSignupEmail('');
+      setSignupPassword('');
+      setSignupName('');
     }
+
+    setLoading(false);
   };
 
   return (
@@ -72,43 +102,43 @@ export default function Auth() {
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
+          {/* ------------------ LOGIN TAB ------------------ */}
           <TabsContent value="login">
             <Card>
               <CardHeader>
                 <CardTitle>Welcome Back</CardTitle>
-                <CardDescription>
-                  Sign in to your account to continue shopping
-                </CardDescription>
+                <CardDescription>Sign in to continue shopping</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label>Email</Label>
                     <Input
-                      id="login-email"
                       type="email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
                     />
                   </div>
+
                   <div>
-                    <Label htmlFor="login-password">Password</Label>
+                    <Label>Password</Label>
                     <Input
-                      id="login-password"
                       type="password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Signing in...' : 'Sign In'}
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Signing in...' : 'Sign In'}
                   </Button>
+
                   <p className="text-xs text-muted-foreground text-center">
                     Tip: Use email with "admin" for admin access
                   </p>
@@ -117,6 +147,7 @@ export default function Auth() {
             </Card>
           </TabsContent>
 
+          {/* ------------------ SIGNUP TAB ------------------ */}
           <TabsContent value="signup">
             <Card>
               <CardHeader>
@@ -125,45 +156,46 @@ export default function Auth() {
                   Join us to start ordering beautiful flowers
                 </CardDescription>
               </CardHeader>
+
               <CardContent>
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div>
-                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Label>Full Name</Label>
                     <Input
-                      id="signup-name"
                       value={signupName}
                       onChange={(e) => setSignupName(e.target.value)}
                       placeholder="John Doe"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
                     />
                   </div>
+
                   <div>
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label>Email</Label>
                     <Input
-                      id="signup-email"
                       type="email"
                       value={signupEmail}
                       onChange={(e) => setSignupEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
                     />
                   </div>
+
                   <div>
-                    <Label htmlFor="signup-password">Password</Label>
+                    <Label>Password</Label>
                     <Input
-                      id="signup-password"
                       type="password"
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating account...' : 'Create Account'}
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Creating account...' : 'Create Account'}
                   </Button>
                 </form>
               </CardContent>

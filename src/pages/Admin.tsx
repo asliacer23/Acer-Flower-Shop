@@ -19,7 +19,7 @@ import { getProducts, createProduct, updateProduct, deleteProduct } from '@/serv
 import { useToast } from '@/hooks/use-toast';
 
 export default function Admin() {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -41,13 +41,21 @@ export default function Admin() {
   });
 
   useEffect(() => {
+    // Wait until auth is done loading
+    if (isLoading) {
+      return;
+    }
+
+    // Check if user is admin
     if (!user || !hasRole('admin')) {
+      console.warn('User is not admin or not logged in. User:', user);
       navigate('/');
       return;
     }
+
     loadOrders();
     loadProducts();
-  }, [user, hasRole, navigate]);
+  }, [user, hasRole, navigate, isLoading]);
 
   const loadOrders = async () => {
     const allOrders = await getOrders();
@@ -160,7 +168,27 @@ export default function Admin() {
     }
   };
 
-  if (!user || !hasRole('admin')) return null;
+  // Show loading while checking permissions
+  if (isLoading) {
+    return (
+      <PageWrapper>
+        <div className="container py-8 flex items-center justify-center min-h-[400px]">
+          <p>Loading...</p>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // Redirect if not admin
+  if (!user || !hasRole('admin')) {
+    return (
+      <PageWrapper>
+        <div className="container py-8 flex items-center justify-center min-h-[400px]">
+          <p>Access denied. You must be an admin to view this page.</p>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   const stats = {
     totalOrders: orders.length,

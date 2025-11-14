@@ -22,11 +22,36 @@ export default function Cart() {
   const [address, setAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
 
+  // Redirect to login if not logged in
+  if (!user?.email) {
+    return (
+      <PageWrapper>
+        <div className="container py-16 text-center">
+          <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h2 className="text-2xl font-bold mb-2">You must be logged in</h2>
+          <p className="text-muted-foreground mb-6">Please log in or create an account to view your cart and checkout.</p>
+          <Button onClick={() => navigate('/auth')}>
+            Log In / Sign Up
+          </Button>
+        </div>
+      </PageWrapper>
+    );
+  }
+
   const handleCheckout = async () => {
     if (!customerName || !address || !paymentMethod) {
       toast({
         title: 'Missing information',
         description: 'Please fill in all checkout fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (cart.length === 0) {
+      toast({
+        title: 'Empty cart',
+        description: 'Add items to your cart before checking out.',
         variant: 'destructive',
       });
       return;
