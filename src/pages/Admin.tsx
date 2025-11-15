@@ -219,7 +219,7 @@ export default function Admin() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.revenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold">₱{stats.revenue.toFixed(2)}</div>
             </CardContent>
           </Card>
 
@@ -271,7 +271,7 @@ export default function Admin() {
                             {order.customerName} • {new Date(order.createdAt).toLocaleDateString()}
                           </p>
                           <p className="text-sm font-semibold mt-1">
-                            ${order.total.toFixed(2)}
+                            ₱{order.total.toFixed(2)}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -335,7 +335,7 @@ export default function Admin() {
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-primary">
-                              ${product.price.toFixed(2)}
+                              ₱{product.price.toFixed(2)}
                             </span>
                             <span className="text-sm text-muted-foreground">
                               Stock: {product.stock}

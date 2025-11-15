@@ -73,7 +73,7 @@ export default function Product() {
             </div>
 
             <p className="text-3xl font-bold text-primary mb-6">
-              ${product.price.toFixed(2)}
+              ₱{product.price.toFixed(2)}
             </p>
 
             <p className="text-muted-foreground mb-6">{product.description}</p>

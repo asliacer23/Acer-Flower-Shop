@@ -110,7 +110,7 @@ export default function Cart() {
                       <h3 className="font-semibold">{item.name}</h3>
                       <p className="text-sm text-muted-foreground">{item.category}</p>
                       <p className="text-lg font-bold text-primary mt-2">
-                        ${item.price.toFixed(2)}
+                        ₱{item.price.toFixed(2)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end justify-between">
@@ -191,11 +191,11 @@ export default function Cart() {
                 <div className="pt-4 border-t">
                   <div className="flex justify-between mb-2">
                     <span>Subtotal</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>₱{total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between mb-4">
                     <span className="font-bold">Total</span>
-                    <span className="font-bold text-primary">${total.toFixed(2)}</span>
+                    <span className="font-bold text-primary">₱{total.toFixed(2)}</span>
                   </div>
                   <Button className="w-full" size="lg" onClick={handleCheckout}>
                     Place Order

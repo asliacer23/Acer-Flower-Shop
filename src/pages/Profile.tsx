@@ -94,12 +94,12 @@ export default function Profile() {
                             <span>
                               {item.name} x{item.quantity}
                             </span>
-                            <span>${(item.price * item.quantity).toFixed(2)}</span>
+                            <span>₱{(item.price * item.quantity).toFixed(2)}</span>
                           </div>
                         ))}
                         <div className="pt-2 border-t flex justify-between font-bold">
                           <span>Total</span>
-                          <span className="text-primary">${order.total.toFixed(2)}</span>
+                          <span className="text-primary">₱{order.total.toFixed(2)}</span>
                         </div>
                       </div>
                     </CardContent>

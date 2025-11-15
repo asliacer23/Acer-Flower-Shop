@@ -79,7 +79,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             </p>
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-primary">
-                ${product.price.toFixed(2)}
+                ₱{product.price.toFixed(2)}
               </span>
               <span className="text-xs text-muted-foreground">
                 {product.stock} in stock
