@@ -2,99 +2,95 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    /* Nature-inspired flower shop palette */
-    --background: 30 40% 98%;
-    --foreground: 160 30% 15%;
+    /* Light mode: Black, White, and Dark Blue (00172D) */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 160 30% 15%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 160 30% 15%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Vibrant floral pink as primary */
-    --primary: 340 85% 55%;
+    /* Primary: Dark Blue (00172D) */
+    --primary: 214 88% 9%;
     --primary-foreground: 0 0% 100%;
 
-    /* Soft sage green as secondary */
-    --secondary: 150 25% 85%;
-    --secondary-foreground: 160 30% 25%;
+    /* Secondary: Black */
+    --secondary: 0 0% 0%;
+    --secondary-foreground: 0 0% 100%;
 
-    /* Light neutral tones */
-    --muted: 30 20% 92%;
-    --muted-foreground: 160 15% 45%;
+    /* Muted: Light Gray */
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 45%;
 
-    /* Warm peachy accent */
-    --accent: 25 90% 70%;
-    --accent-foreground: 160 30% 20%;
+    /* Accent: Dark Blue */
+    --accent: 214 88% 12%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 150 15% 88%;
-    --input: 150 15% 88%;
-    --ring: 340 85% 55%;
+    --border: 0 0% 88%;
+    --input: 0 0% 96%;
+    --ring: 214 88% 9%;
 
     --radius: 0.75rem;
 
     /* Sidebar styling */
-    --sidebar-background: 150 20% 96%;
-    --sidebar-foreground: 160 30% 20%;
-    --sidebar-primary: 340 85% 55%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 8%;
+    --sidebar-primary: 214 88% 9%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 150 25% 90%;
-    --sidebar-accent-foreground: 160 30% 25%;
-    --sidebar-border: 150 15% 85%;
-    --sidebar-ring: 340 85% 55%;
+    --sidebar-accent: 0 0% 92%;
+    --sidebar-accent-foreground: 0 0% 8%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 214 88% 9%;
   }
 
   .dark {
-    /* Dark mode with muted florals */
-    --background: 160 20% 10%;
-    --foreground: 30 30% 95%;
+    /* Dark mode: Dark Blue background with White text */
+    --background: 214 30% 12%;
+    --foreground: 0 0% 98%;
 
-    --card: 160 18% 12%;
-    --card-foreground: 30 30% 95%;
+    --card: 214 35% 18%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 160 18% 12%;
-    --popover-foreground: 30 30% 95%;
+    --popover: 214 35% 18%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Softer pink for dark mode */
-    --primary: 340 70% 60%;
-    --primary-foreground: 160 20% 10%;
+    /* Primary: White in dark mode */
+    --primary: 0 0% 100%;
+    --primary-foreground: 214 30% 12%;
 
-    /* Muted green */
-    --secondary: 150 15% 20%;
-    --secondary-foreground: 30 30% 95%;
+    /* Secondary: Light gray */
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 214 30% 12%;
 
-    --muted: 160 15% 18%;
-    --muted-foreground: 30 20% 70%;
+    --muted: 214 25% 25%;
+    --muted-foreground: 0 0% 72%;
 
-    /* Warm accent for dark */
-    --accent: 25 60% 50%;
-    --accent-foreground: 30 30% 95%;
+    /* Accent: White */
+    --accent: 0 0% 100%;
+    --accent-foreground: 214 30% 12%;
 
-    --destructive: 0 62.8% 50%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 160 15% 20%;
-    --input: 160 15% 20%;
-    --ring: 340 70% 60%;
+    --border: 214 25% 25%;
+    --input: 214 25% 22%;
+    --ring: 0 0% 100%;
 
-    --sidebar-background: 160 18% 12%;
-    --sidebar-foreground: 30 30% 90%;
-    --sidebar-primary: 340 70% 60%;
-    --sidebar-primary-foreground: 160 20% 10%;
-    --sidebar-accent: 160 15% 18%;
-    --sidebar-accent-foreground: 30 30% 90%;
-    --sidebar-border: 160 15% 20%;
-    --sidebar-ring: 340 70% 60%;
+    --sidebar-background: 214 30% 12%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 214 30% 12%;
+    --sidebar-accent: 214 25% 25%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 214 25% 25%;
+    --sidebar-ring: 0 0% 100%;
   }
 }
 
@@ -104,6 +100,219 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Advanced gradient backgrounds */
+  .gradient-primary {
+    @apply bg-gradient-to-br from-primary via-accent to-secondary;
+  }
+
+  .gradient-dark {
+    @apply bg-gradient-to-tr from-secondary via-primary to-accent;
+  }
+
+  .gradient-mesh {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 25%, hsl(var(--secondary)) 50%, hsl(var(--primary)) 75%, hsl(var(--accent)) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Animated border gradient */
+  @keyframes borderGradient {
+    0% { border-color: hsl(var(--primary)); }
+    50% { border-color: hsl(var(--accent)); }
+    100% { border-color: hsl(var(--primary)); }
+  }
+
+  .border-animated {
+    animation: borderGradient 3s ease-in-out infinite;
+  }
+
+  /* Glass morphism effects */
+  .glass {
+    @apply backdrop-blur-xl bg-white/10 dark:bg-white/5 border border-white/30 dark:border-white/15 rounded-2xl shadow-2xl;
+  }
+
+  .glass-light {
+    @apply backdrop-blur-xl bg-white/90 dark:bg-black/40 border border-white/50 dark:border-white/20 rounded-2xl;
+  }
+
+  .glass-card {
+    @apply backdrop-blur-lg bg-white/20 dark:bg-white/10 border border-white/30 dark:border-white/20 rounded-xl;
+  }
+
+  /* Premium card styling */
+  .card-premium {
+    @apply relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg hover:shadow-2xl transition-all duration-500 hover:border-accent;
+    position: relative;
+  }
+
+  .card-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .card-premium:hover::before {
+    left: 100%;
+  }
+
+  /* Advanced button styles */
+  .btn-premium {
+    @apply relative px-6 py-3 font-semibold rounded-xl transition-all duration-300 overflow-hidden;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+  }
+
+  .btn-premium:hover {
+    @apply shadow-lg scale-105 translate-y-[-2px];
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-premium:active {
+    @apply scale-95 translate-y-0;
+  }
+
+  /* Frosted glass button */
+  .btn-glass {
+    @apply glass px-6 py-3 font-semibold rounded-xl transition-all duration-300;
+  }
+
+  .btn-glass:hover {
+    @apply bg-white/20 dark:bg-white/15 shadow-xl;
+  }
+
+  /* Input focus effects */
+  .input-premium {
+    @apply rounded-lg border border-border bg-input text-foreground placeholder:text-muted-foreground transition-all duration-300;
+  }
+
+  .input-premium:focus {
+    @apply border-accent bg-background shadow-lg outline-none ring-2 ring-accent/20;
+  }
+
+  /* Badge animations */
+  .badge-glow {
+    @apply relative px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium;
+    animation: badgeGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes badgeGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(0, 0, 0, 0.4); }
+  }
+
+  /* Text effects */
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-shimmer {
+    background: linear-gradient(90deg, currentColor 0%, rgba(255,255,255,0.3) 50%, currentColor 100%);
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Divider effects */
+  .divider-gradient {
+    background: linear-gradient(90deg, transparent, hsl(var(--border)), transparent);
+    height: 1px;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+
+  .hover-lift:hover {
+    @apply shadow-2xl -translate-y-2;
+  }
+
+  /* Smooth transitions */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Text gradients */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  /* Advanced input styling */
+  .input-premium {
+    @apply w-full px-4 py-3 rounded-lg bg-input border border-border transition-all duration-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply placeholder:text-muted-foreground;
+  }
+
+  /* Pulse glow animation */
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Text styles */
+  .text-gradient-primary {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary;
+  }
+
+  /* Responsive typography */
+  .text-hero {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .text-section {
+    @apply text-2xl md:text-3xl font-bold;
+  }
+
+  .text-subheading {
+    @apply text-lg md:text-xl font-semibold;
+  }
+
+  /* Premium spacing classes */
+  .space-premium {
+    @apply space-y-8 md:space-y-12;
+  }
+
+  /* Border gradient */
+  .border-gradient {
+    position: relative;
+    border: 1px solid transparent;
+    background: linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+                linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))) border-box;
   }
 }
