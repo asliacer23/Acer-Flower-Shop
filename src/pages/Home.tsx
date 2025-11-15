@@ -259,7 +259,7 @@ export default function Home() {
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
     >
-      <Link to="/products">
+      <Link to="/shop">
         <Button 
           size="lg" 
           className="
