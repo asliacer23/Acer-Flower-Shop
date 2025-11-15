@@ -196,7 +196,7 @@ export const ProductCard = ({ product, onWishlistChange, refreshTrigger }: Produ
                     fill={inWishlist ? 'currentColor' : 'none'}
                   />
                 </motion.div>
-                <span className="sm:hidden ml-2">Like</span>
+                <span className="sm:hidden ml-2">Add to Wishlist</span>
               </Button>
             </motion.div>
           </CardFooter>

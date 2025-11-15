@@ -2,27 +2,23 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PageWrapper } from '@/components/layout/PageWrapper';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { createOrder } from '@/services/orders';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
 export default function Cart() {
-  const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
+  const { cart, removeFromCart, updateQuantity } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  const [customerName, setCustomerName] = useState(user?.name || '');
-  const [address, setAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+
+  // Handle bulk checkout
+  const handleCheckoutAll = () => {
+    navigate('/checkout');
+  };
 
   // Redirect to login if not logged in
   if (!user?.email) {
@@ -41,8 +37,10 @@ export default function Cart() {
             <ShoppingBag className="h-20 w-20 mx-auto mb-6 text-primary opacity-80" />
           </motion.div>
           <h2 className="text-4xl font-bold mb-3 text-foreground">You must be logged in</h2>
-          <p className="text-muted-foreground mb-8 text-lg max-w-2xl mx-auto">Please log in or create an account to view your cart and checkout.</p>
-          <Button 
+          <p className="text-muted-foreground mb-8 text-lg max-w-2xl mx-auto">
+            Please log in or create an account to view your cart and checkout.
+          </p>
+          <Button
             onClick={() => navigate('/auth')}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 h-11"
           >
@@ -53,45 +51,6 @@ export default function Cart() {
       </PageWrapper>
     );
   }
-
-  const handleCheckout = async () => {
-    if (!customerName || !address || !paymentMethod) {
-      toast({
-        title: 'Missing information',
-        description: 'Please fill in all checkout fields.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (cart.length === 0) {
-      toast({
-        title: 'Empty cart',
-        description: 'Add items to your cart before checking out.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      await createOrder(cart, customerName, address, paymentMethod, user?.id);
-      clearCart();
-      toast({
-        title: 'Order placed!',
-        description: 'Your order has been successfully placed.',
-      });
-      navigate('/profile');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to place order. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   if (cart.length === 0) {
     return (
@@ -159,7 +118,7 @@ export default function Cart() {
                 <Card className="bg-gradient-to-br from-card to-card/90 border-border hover:border-primary/50 hover:shadow-md transition-all overflow-hidden">
                   <CardContent className="p-4 md:p-6">
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 md:gap-6 items-start">
-                      {/* Image - Left Side */}
+                      {/* Image */}
                       <div className="sm:col-span-3">
                         <div className="w-full aspect-square overflow-hidden rounded-xl shadow-md hover:shadow-lg transition-shadow">
                           <img
@@ -170,7 +129,7 @@ export default function Cart() {
                         </div>
                       </div>
 
-                      {/* Product Info - Middle */}
+                      {/* Info */}
                       <div className="sm:col-span-5 flex flex-col justify-between">
                         <div>
                           <h3 className="font-bold text-base md:text-lg text-foreground mb-1 line-clamp-2">{item.name}</h3>
@@ -183,49 +142,50 @@ export default function Cart() {
                           </div>
                         </div>
 
-                        {/* Subtotal */}
                         <div className="mt-3 pt-3 border-t border-border/50">
                           <p className="text-sm text-muted-foreground">
-                            Subtotal: <span className="font-semibold text-foreground">₱{(item.price * item.quantity).toFixed(2)}</span>
+                            Subtotal:{' '}
+                            <span className="font-semibold text-foreground">
+                              ₱{(item.price * item.quantity).toFixed(2)}
+                            </span>
                           </p>
                         </div>
                       </div>
 
-                      {/* Controls - Right Side */}
-                      <div className="sm:col-span-4 flex flex-row sm:flex-col items-center sm:items-end gap-3 pt-2 sm:pt-0">
-                        {/* Quantity Control */}
-                        <div className="flex items-center gap-2 bg-muted/50 rounded-xl p-2 border border-border/50 hover:border-primary/30 transition-colors">
+                      {/* Controls */}
+                      <div className="sm:col-span-4 flex flex-col gap-3">
+                        <div className="flex items-center gap-2 justify-between">
+                          <div className="flex items-center gap-2 bg-muted/50 rounded-xl p-2 border border-border/50 hover:border-primary/30 transition-colors">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="p-1.5 hover:bg-background rounded-lg transition-colors"
+                            >
+                              <Minus className="h-4 w-4 text-foreground" />
+                            </motion.button>
+
+                            <span className="w-8 text-center font-bold text-foreground text-lg">{item.quantity}</span>
+
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="p-1.5 hover:bg-background rounded-lg transition-colors"
+                            >
+                              <Plus className="h-4 w-4 text-foreground" />
+                            </motion.button>
+                          </div>
+
                           <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-1.5 hover:bg-background rounded-lg transition-colors"
-                            aria-label="Decrease quantity"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => removeFromCart(item.id)}
+                            className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-all hover:shadow-md"
                           >
-                            <Minus className="h-4 w-4 text-foreground" />
-                          </motion.button>
-                          <span className="w-8 text-center font-bold text-foreground text-lg">{item.quantity}</span>
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-1.5 hover:bg-background rounded-lg transition-colors"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="h-4 w-4 text-foreground" />
+                            <Trash2 className="h-5 w-5" />
                           </motion.button>
                         </div>
-
-                        {/* Delete Button */}
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => removeFromCart(item.id)}
-                          className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-all hover:shadow-md"
-                          aria-label="Remove from cart"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </motion.button>
                       </div>
                     </div>
                   </CardContent>
@@ -234,73 +194,48 @@ export default function Cart() {
             ))}
           </motion.div>
 
-          {/* Checkout */}
+          {/* Summary */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             className="sticky top-24 h-fit"
           >
-            <Card className="bg-card border-border shadow-lg">
-              <CardHeader className="border-b border-border bg-muted/30">
-                <CardTitle className="text-2xl">Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5 pt-6">
+            <Card className="bg-gradient-to-br from-card to-card/90 border-border shadow-lg">
+              <CardContent className="p-6 space-y-5">
                 <div>
-                  <Label htmlFor="name" className="font-semibold text-foreground">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="John Doe"
-                    className="mt-2 bg-background border-border h-11"
-                  />
+                  <h3 className="text-2xl font-bold text-foreground mb-4">Order Summary</h3>
                 </div>
 
-                <div>
-                  <Label htmlFor="address" className="font-semibold text-foreground">Delivery Address</Label>
-                  <Input
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="123 Main St, City, State"
-                    className="mt-2 bg-background border-border h-11"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="payment" className="font-semibold text-foreground">Payment Method</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="mt-2 bg-background border-border h-11">
-                      <SelectValue placeholder="Select method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash on Delivery</SelectItem>
-                      <SelectItem value="card">Credit/Debit Card</SelectItem>
-                      <SelectItem value="paypal">PayPal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="pt-6 space-y-3 border-t border-border">
+                <div className="space-y-3 pb-4 border-b border-border">
                   <div className="flex justify-between text-foreground">
-                    <span>Subtotal</span>
-                    <span className="font-semibold">₱{total.toFixed(2)}</span>
+                    <span>Subtotal ({cart.length} items)</span>
+                    <span className="font-semibold">
+                      ₱{cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}
+                    </span>
                   </div>
-                  <div className="flex justify-between text-lg">
-                    <span className="font-bold text-foreground">Total</span>
-                    <span className="font-bold text-primary text-2xl">₱{total.toFixed(2)}</span>
+
+                  <div className="flex justify-between text-lg font-bold">
+                    <span className="text-foreground">Total</span>
+                    <span className="text-primary text-2xl">
+                      ₱{cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}
+                    </span>
                   </div>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button 
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 mt-4"
-                      onClick={handleCheckout}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? 'Processing...' : 'Place Order'}
-                    </Button>
-                  </motion.div>
                 </div>
+
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12"
+                    onClick={handleCheckoutAll}
+                  >
+                    Checkout All Items
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </motion.div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Or click "Place Order" on a product page to checkout a single item
+                </p>
               </CardContent>
             </Card>
           </motion.div>

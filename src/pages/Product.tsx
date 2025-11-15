@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Heart, Package, Shield, Truck, Check } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Heart, Package, Shield, Truck, Check, Share2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageWrapper } from '@/components/layout/PageWrapper';
@@ -20,6 +20,7 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [inWishlist, setInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
@@ -111,6 +112,40 @@ export default function Product() {
       title: 'Added to cart',
       description: `${quantity}x ${product.name} added to your cart.`,
     });
+  };
+
+  const handlePlaceOrder = () => {
+    if (!user?.email) {
+      toast({
+        title: 'Login Required',
+        description: 'Please log in to place an order.',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+      return;
+    }
+    
+    // Create single product item with quantity
+    const singleItem = { ...product, quantity };
+    
+    // Navigate to checkout with only this product
+    navigate('/checkout', {
+      state: {
+        items: [singleItem],
+        isSingleProduct: true
+      }
+    });
+  };
+
+  const shareProduct = () => {
+    const shareUrl = `${window.location.origin}/product/${id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedLink(true);
+    toast({
+      title: 'Link copied!',
+      description: 'Product link copied to clipboard',
+    });
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   return (
@@ -242,23 +277,60 @@ export default function Product() {
               </span>
             </motion.div>
 
-            {/* Add to Cart Button */}
+            {/* Action Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              className="space-y-3"
             >
-              <Button
-                size="lg"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-14 text-lg"
-                onClick={handleAddToCart}
-                disabled={product.stock === 0}
+              {/* Add to Cart Button */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <ShoppingCart className="mr-3 h-6 w-6" />
-                {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-              </Button>
+                <Button
+                  size="lg"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-14 text-lg"
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0}
+                >
+                  <ShoppingCart className="mr-3 h-6 w-6" />
+                  {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                </Button>
+              </motion.div>
+
+              {/* Place Order & Share Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full border-2 border-primary text-primary hover:bg-primary/5 font-bold h-12"
+                    onClick={handlePlaceOrder}
+                    disabled={product.stock === 0}
+                  >
+                    Place Order
+                  </Button>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full border-2 border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-bold h-12"
+                    onClick={shareProduct}
+                  >
+                    {copiedLink ? <Check className="h-5 w-5" /> : <Share2 className="h-5 w-5" />}
+                  </Button>
+                </motion.div>
+              </div>
             </motion.div>
 
             {/* Features */}

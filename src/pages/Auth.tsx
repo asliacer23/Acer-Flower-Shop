@@ -93,7 +93,7 @@ export default function Auth() {
       <div className="container py-16 max-w-md mx-auto">
         <div className="flex items-center justify-center gap-2 mb-8">
           <Flower2 className="h-8 w-8 text-primary" />
-          <span className="text-2xl font-bold">Petal Swift</span>
+          <span className="text-2xl font-bold">Flowerist</span>
         </div>
 
         <Tabs defaultValue="login" className="w-full">

@@ -8,6 +8,8 @@ const Home = lazy(() => import('@/pages/Home'));
 const Shop = lazy(() => import('@/pages/Shop'));
 const Product = lazy(() => import('@/pages/Product'));
 const Cart = lazy(() => import('@/pages/Cart'));
+const Checkout = lazy(() => import('@/pages/Checkout'));
+const Addresses = lazy(() => import('@/pages/Addresses'));
 const Auth = lazy(() => import('@/pages/Auth'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const Admin = lazy(() => import('@/pages/Admin'));
@@ -30,6 +32,8 @@ export const AppRoutes = () => {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<Product />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/addresses" element={<Addresses />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />

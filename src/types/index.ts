@@ -42,4 +42,21 @@ export interface Review {
   createdAt: string;
 }
 
+export interface Address {
+  id: string;
+  user_id: string;
+  full_name: string;
+  phone_number: string;
+  region: string;
+  province: string;
+  city: string;
+  barangay: string;
+  postal_code: string;
+  street_address: string;
+  label: string; // 'Home', 'Work', or custom
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export type UserRole = 'guest' | 'buyer' | 'admin';

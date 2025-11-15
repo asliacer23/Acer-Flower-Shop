@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, DollarSign, TrendingUp, Plus, Pencil, Trash2, ShoppingBag } from 'lucide-react';
+import { Package, DollarSign, TrendingUp, Plus, Pencil, Trash2, ShoppingBag, MapPin, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,8 @@ export default function Admin() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -198,97 +200,115 @@ export default function Admin() {
 
   return (
     <PageWrapper>
-      <div className="container py-8">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <div className="container py-4 md:py-8 px-2 md:px-0">
+        <h1 className="text-xl md:text-3xl font-bold mb-4 md:mb-8">Admin Dashboard</h1>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
+          <Card className="p-3 md:p-4">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-0">
+              <CardTitle className="text-xs md:text-sm font-medium">Total Orders</CardTitle>
+              <Package className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-lg md:text-2xl font-bold">{stats.totalOrders}</div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-3 md:p-4">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-0">
+              <CardTitle className="text-xs md:text-sm font-medium">Revenue</CardTitle>
+              <DollarSign className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₱{stats.revenue.toFixed(2)}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-lg md:text-2xl font-bold">₱{stats.revenue.toFixed(2)}</div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-3 md:p-4 col-span-1 sm:col-span-2 lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-0">
+              <CardTitle className="text-xs md:text-sm font-medium">Pending Orders</CardTitle>
+              <TrendingUp className="h-3 md:h-4 w-3 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingOrders}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-lg md:text-2xl font-bold">{stats.pendingOrders}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs for Orders and Products */}
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList>
-            <TabsTrigger value="orders">
-              <Package className="h-4 w-4 mr-2" />
-              Orders
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:grid-cols-2">
+            <TabsTrigger value="orders" className="text-xs md:text-sm">
+              <Package className="h-3 md:h-4 w-3 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Orders</span>
+              <span className="sm:hidden">Orders</span>
             </TabsTrigger>
-            <TabsTrigger value="products">
-              <ShoppingBag className="h-4 w-4 mr-2" />
-              Products
+            <TabsTrigger value="products" className="text-xs md:text-sm">
+              <ShoppingBag className="h-3 md:h-4 w-3 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Products</span>
+              <span className="sm:hidden">Prod.</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
+              <CardHeader className="px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-lg md:text-xl">Recent Orders</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
+                <div className="space-y-2 md:space-y-4">
                   {orders.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No orders yet</p>
+                    <p className="text-center text-muted-foreground py-8 text-sm">No orders yet</p>
                   ) : (
                     orders.map((order) => (
                       <div
                         key={order.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
+                        className="flex flex-col md:flex-row md:items-center md:justify-between p-2 md:p-4 border rounded-lg hover:border-primary/50 transition-colors gap-3 md:gap-0"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="font-semibold">#{order.id}</span>
-                            <Badge>{order.status}</Badge>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                            <span className="font-semibold text-xs md:text-sm truncate">#{order.id.slice(0, 8)}</span>
+                            <Badge className="text-xs">{order.status}</Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs md:text-sm text-muted-foreground truncate">
                             {order.customerName} • {new Date(order.createdAt).toLocaleDateString()}
                           </p>
-                          <p className="text-sm font-semibold mt-1">
-                            ₱{order.total.toFixed(2)}
+                          <p className="text-xs md:text-sm font-semibold mt-1">
+                            ₱{order.total.toFixed(2)} • {order.items.length} item{order.items.length > 1 ? 's' : ''}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 md:gap-2 w-full md:w-auto">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 md:flex-none text-xs md:text-sm"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setShowOrderModal(true);
+                            }}
+                          >
+                            <Eye className="h-3 md:h-4 w-3 md:w-4 mr-1" />
+                            <span className="hidden sm:inline">View</span>
+                          </Button>
                           {order.status === 'pending' && (
                             <Button
                               size="sm"
+                              className="flex-1 md:flex-none text-xs md:text-sm"
                               onClick={() => handleStatusChange(order.id, 'processing')}
                             >
-                              Process
+                              <span className="hidden sm:inline">Process</span>
+                              <span className="sm:hidden">Proc</span>
                             </Button>
                           )}
                           {order.status === 'processing' && (
                             <Button
                               size="sm"
+                              className="flex-1 md:flex-none text-xs md:text-sm"
                               onClick={() => handleStatusChange(order.id, 'completed')}
                             >
-                              Complete
+                              <span className="hidden sm:inline">Complete</span>
+                              <span className="sm:hidden">Done</span>
                             </Button>
                           )}
                         </div>
@@ -505,6 +525,99 @@ export default function Admin() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Order Details Modal */}
+        <Dialog open={showOrderModal} onOpenChange={setShowOrderModal}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto max-w-sm md:max-w-2xl w-[95vw] md:w-full">
+            <DialogHeader className="pr-6">
+              <DialogTitle className="text-lg md:text-2xl">Order Details #{selectedOrder?.id.slice(0, 8)}</DialogTitle>
+              <DialogDescription className="text-xs md:text-sm">
+                Placed on {selectedOrder && new Date(selectedOrder.createdAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedOrder && (
+              <div className="space-y-6">
+                {/* Order Status */}
+                <div>
+                  <Label className="font-semibold text-sm md:text-base">Status</Label>
+                  <div className="mt-2 flex gap-2 items-center flex-wrap">
+                    <Badge variant="secondary" className="capitalize text-xs md:text-sm">
+                      {selectedOrder.status}
+                    </Badge>
+                    <Select value={selectedOrder.status} onValueChange={(status) => {
+                      handleStatusChange(selectedOrder.id, status as Order['status']);
+                      setShowOrderModal(false);
+                    }}>
+                      <SelectTrigger className="w-[140px] md:w-[180px] text-xs md:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Customer Information */}
+                <div>
+                  <Label className="font-semibold text-sm md:text-base">Customer Name</Label>
+                  <p className="text-foreground mt-1 text-xs md:text-sm">{selectedOrder.customerName}</p>
+                </div>
+
+                {/* Delivery Address */}
+                <div>
+                  <Label className="font-semibold flex items-center gap-2 text-sm md:text-base">
+                    <MapPin className="w-3 md:w-4 h-3 md:h-4" />
+                    Delivery Address
+                  </Label>
+                  <p className="text-foreground mt-1 text-xs md:text-sm bg-muted p-2 md:p-3 rounded break-words">{selectedOrder.address}</p>
+                </div>
+
+                {/* Items */}
+                <div>
+                  <Label className="font-semibold mb-3 block text-sm md:text-base">Items Ordered</Label>
+                  <div className="space-y-2 md:space-y-3 border-l-2 border-primary pl-3 md:pl-4">
+                    {selectedOrder.items.map((item) => (
+                      <div key={item.id} className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground text-xs md:text-sm">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Qty: {item.quantity} × ₱{item.price.toFixed(2)}
+                          </p>
+                        </div>
+                        <span className="font-bold text-primary text-xs md:text-sm whitespace-nowrap">₱{(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <Label className="font-semibold text-sm md:text-base">Payment Method</Label>
+                  <p className="text-foreground mt-1 capitalize text-xs md:text-sm">{selectedOrder.paymentMethod}</p>
+                </div>
+
+                {/* Total */}
+                <div className="border-t border-border pt-3 md:pt-4 bg-muted p-3 md:p-4 rounded">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-sm md:text-lg text-foreground">Total Amount</span>
+                    <span className="font-bold text-lg md:text-2xl text-primary">₱{selectedOrder.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </PageWrapper>
   );
