@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { UserRole } from "@/types";
+import { termsService } from "@/services/terms";
 
 interface AppUser {
   id: string;
   email: string;
   name: string;
+  photo_url?: string;
   role: UserRole;
   wishlist: any[];
 }
@@ -17,87 +19,73 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<any>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
+  updateUser: (updates: Partial<AppUser>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // ----------------------------------------------------------
-  // LOAD USER SESSION + PROFILE + ROLE ON REFRESH
+  // LOAD USER SESSION + PROFILE + ROLE
   // ----------------------------------------------------------
   const loadUser = async () => {
     try {
       setIsLoading(true);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
 
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         setUser(null);
-        setIsLoading(false);
         return;
       }
 
       const authUser = session.user;
-      const userEmail = authUser.email || "";
+      const email = authUser.email || "";
 
       // Get profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", authUser.id)
         .single();
 
-      if (profileError) {
-        console.warn("Profile not found, creating one...", profileError);
-        // Create profile if it doesn't exist
-        await supabase.from("profiles").insert([{
-          id: authUser.id,
-          name: authUser.user_metadata?.name || userEmail.split('@')[0] || "User",
-          email: userEmail,
-          wishlist: [],
-        }]);
+      // Auto-create missing profile
+      if (!profile) {
+        await supabase.from("profiles").insert([
+          {
+            id: authUser.id,
+            email,
+            name: authUser.user_metadata?.full_name || email.split("@")[0],
+            photo_url: authUser.user_metadata?.photo_url || null,
+            wishlist: [],
+          },
+        ]);
       }
 
-      // Get role
-      const { data: roleData, error: roleError } = await supabase
+      // Get user role
+      const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
         .eq("userid", authUser.id)
         .single();
 
-      let finalRole: UserRole = "buyer";
+      const userRole: UserRole = roleData?.role || (email.includes("admin") ? "admin" : "buyer");
 
-      if (roleError) {
-        console.warn("Role not found, creating role based on email...", roleError);
-        // Create role based on email if it doesn't exist
-        finalRole = userEmail.includes('admin') ? 'admin' : 'buyer';
-        await supabase.from("user_roles").insert([{
-          userid: authUser.id,
-          role: finalRole,
-        }]);
-      } else {
-        finalRole = (roleData?.role as UserRole) || "buyer";
-      }
-
-      const formattedUser: AppUser = {
+      setUser({
         id: authUser.id,
-        email: profile?.email || userEmail,
-        name: profile?.name || authUser.user_metadata?.name || userEmail.split('@')[0] || "User",
-        wishlist: profile?.wishlist ?? [],
-        role: finalRole,
-      };
+        email: profile?.email || email,
+        name: profile?.name || authUser.user_metadata?.full_name || email.split("@")[0],
+        photo_url: profile?.photo_url,
+        wishlist: profile?.wishlist || [],
+        role: userRole,
+      });
 
-      console.log("User loaded:", formattedUser);
-      setUser(formattedUser);
-    } catch (error) {
-      console.error("Error loading user:", error);
+    } catch (err) {
+      console.error("Error loading user:", err);
       setUser(null);
+
     } finally {
       setIsLoading(false);
     }
@@ -106,57 +94,80 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     loadUser();
 
-    // Auto refresh when auth changes
     const { data: listener } = supabase.auth.onAuthStateChange(() => {
       loadUser();
     });
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   // ----------------------------------------------------------
-  // SIGN UP (AUTH + PROFILE + ROLE)
+  // UPDATE USER (name/photo)  **IMPORTANT**
+  // ----------------------------------------------------------
+  const updateUser = async (updates: Partial<AppUser>) => {
+    if (!user) return;
+
+    // Update UI instantly
+    setUser(prev => prev ? { ...prev, ...updates } : prev);
+
+    // Sync name
+    if (updates.name) {
+      await supabase
+        .from("profiles")
+        .update({ name: updates.name, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+
+      await supabase.auth.updateUser({ data: { full_name: updates.name } });
+    }
+
+    // Sync photo
+    if (updates.photo_url !== undefined) {
+      await supabase
+        .from("profiles")
+        .update({ photo_url: updates.photo_url, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+
+      await supabase.auth.updateUser({ data: { photo_url: updates.photo_url } });
+    }
+
+    await loadUser();
+  };
+
+  // ----------------------------------------------------------
+  // SIGN UP
   // ----------------------------------------------------------
   const signUp = async (email: string, password: string, name: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth?verified=true`,
-        },
       });
 
       if (error) throw error;
-      const authUser = data.user;
-      if (!authUser) throw new Error("User not returned by signUp.");
+      if (!data.user) throw new Error("No user returned.");
 
-      // Determine role based on email
-      const role = email.includes('admin') ? 'admin' : 'buyer';
+      const role: UserRole = email.includes("admin") ? "admin" : "buyer";
 
-      // Insert into profiles
       await supabase.from("profiles").insert([
         {
-          id: authUser.id,
-          name: name,
-          email: email,
+          id: data.user.id,
+          email,
+          name,
           wishlist: [],
         },
       ]);
 
-      // Insert into user_roles with proper role
       await supabase.from("user_roles").insert([
         {
-          userid: authUser.id,
-          role: role,
+          userid: data.user.id,
+          role,
         },
       ]);
 
-      return { success: true, user: authUser };
+      await termsService.recordTermsAcceptance(data.user.id);
+
+      return { success: true };
     } catch (err: any) {
-      console.error(err);
       return { success: false, error: err.message };
     }
   };
@@ -172,34 +183,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       if (error) throw error;
-      if (!data.session) throw new Error("No session returned");
-
-      // Wait for session to be established
-      await new Promise(r => setTimeout(r, 500));
-      
-      // Fix existing demo admin account role if needed
-      if (email.includes('admin')) {
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("userid", data.user?.id)
-          .single();
-
-        // If the admin account has wrong role, update it
-        if (roleData?.role === 'buyer') {
-          console.log("Fixing admin account role from buyer to admin...");
-          await supabase
-            .from("user_roles")
-            .update({ role: 'admin' })
-            .eq("userid", data.user?.id);
-        }
-      }
+      await new Promise(r => setTimeout(r, 300));
 
       await loadUser();
-      
       return { success: true };
     } catch (err: any) {
-      console.error("Sign in error:", err);
       return { success: false, error: err.message };
     }
   };
@@ -213,10 +201,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ----------------------------------------------------------
-  // ROLE CHECK (admin | buyer | guest)
+  // ROLE CHECK
   // ----------------------------------------------------------
   const hasRole = (role: UserRole) => {
-    if (!user) return role === "guest";
+    if (!user) return false;
     return user.role === role;
   };
 
@@ -229,6 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         signUp,
         signOut,
         hasRole,
+        updateUser,   // <-- Added here
       }}
     >
       {children}
@@ -236,12 +225,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// ----------------------------------------------------------
-// useAuth hook
-// ----------------------------------------------------------
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx)
-    throw new Error("useAuth must be used within an AuthProvider");
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 };

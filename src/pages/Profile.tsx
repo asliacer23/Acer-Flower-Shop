@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Package, Heart, X, ArrowRight, ShoppingBag, MapPin, ChevronDown } from 'lucide-react';
+import { User, Package, Heart, X, ArrowRight, ShoppingBag, MapPin, ChevronDown, Star, Edit2 } from 'lucide-react';
+import { AddReviewModal } from '@/components/reviews/AddReviewModal';
+import { EditReviewModal } from '@/components/reviews/EditReviewModal';
+import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { ReviewList } from '@/components/reviews/ReviewList';
+import { reviewService } from '@/services/reviews';
+import { supabase } from '@/lib/supabase';
+import { ReviewWithUserInfo } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,16 +41,54 @@ export default function Profile() {
   const [loadingWishlist, setLoadingWishlist] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedOrderForReview, setSelectedOrderForReview] = useState<Order | null>(null);
+  const [reviewRefreshTrigger, setReviewRefreshTrigger] = useState(0);
+  const [productReviews, setProductReviews] = useState<{ [key: string]: ReviewWithUserInfo[] }>({});
+  const [showEditReviewModal, setShowEditReviewModal] = useState(false);
+  const [selectedReviewForEdit, setSelectedReviewForEdit] = useState<ReviewWithUserInfo | null>(null);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [profileName, setProfileName] = useState(user?.name || '');
+  const [profilePhoto, setProfilePhoto] = useState<string | undefined>();
 
   useEffect(() => {
     if (!user) {
       navigate('/auth');
       return;
     }
+    setProfileName(user.name);
+    loadProfileData();
     getOrders(user.id).then(setOrders);
     loadWishlist();
     loadAddresses();
   }, [user, navigate]);
+
+  const loadProfileData = async () => {
+    if (!user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, photo_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfileName(data.name || user.name);
+        if (data.photo_url) {
+          setProfilePhoto(data.photo_url);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load profile data:', error);
+    }
+  };
 
   const loadAddresses = async () => {
     if (!user?.id) return;
@@ -61,6 +106,20 @@ export default function Profile() {
     const items = await getWishlistItems(user.id);
     setWishlist(items);
     setLoadingWishlist(false);
+  };
+
+  const loadProductReviews = async (productId: string) => {
+    try {
+      const reviews = await reviewService.getProductReviews(productId);
+      setProductReviews(prev => ({ ...prev, [productId]: reviews }));
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+    }
+  };
+
+  const hasUserReviewedOrderItem = (orderId: string, productId: string): boolean => {
+    const reviews = productReviews[productId] || [];
+    return reviews.some(r => r.user_id === user?.id && r.order_id === orderId);
   };
 
   const handleRemoveFromWishlist = async (productId: string) => {
@@ -127,13 +186,26 @@ export default function Profile() {
             transition={{ duration: 0.6 }}
             className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 mb-6 md:mb-12 p-4 md:p-8 bg-gradient-to-r from-primary/10 to-primary/5 border border-border rounded-xl"
           >
-            <div className="h-16 md:h-20 w-16 md:w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg flex-shrink-0">
-              <User className="h-8 md:h-10 w-8 md:w-10" />
+            <div className="h-16 md:h-20 w-16 md:w-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden">
+              {profilePhoto ? (
+                <img src={profilePhoto} alt={profileName} className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-8 md:h-10 w-8 md:w-10" />
+              )}
             </div>
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-1">{user.name}</h1>
+              <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-1">{profileName}</h1>
               <p className="text-xs md:text-lg text-muted-foreground truncate">{user.email}</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowEditProfileModal(true)}
+              className="mt-4 md:mt-0 text-xs md:text-sm"
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit Profile
+            </Button>
           </motion.div>
 
           {/* Tabs */}
@@ -143,11 +215,16 @@ export default function Profile() {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             <Tabs defaultValue="orders" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-muted p-1 rounded-lg h-auto md:h-12">
+              <TabsList className="grid w-full grid-cols-4 bg-muted p-1 rounded-lg h-auto md:h-12">
                 <TabsTrigger value="orders" className="data-[state=active]:bg-background rounded-md font-semibold text-xs md:text-sm">
                   <Package className="h-3 md:h-5 w-3 md:w-5 mr-1 md:mr-2" />
-                  <span className="hidden sm:inline">Orders ({orders.length})</span>
-                  <span className="sm:hidden">{orders.length}</span>
+                  <span className="hidden sm:inline">Orders</span>
+                  <span className="sm:hidden">All</span>
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="data-[state=active]:bg-background rounded-md font-semibold text-xs md:text-sm">
+                  <Star className="h-3 md:h-5 w-3 md:w-5 mr-1 md:mr-2" />
+                  <span className="hidden sm:inline">Completed</span>
+                  <span className="sm:hidden">Done</span>
                 </TabsTrigger>
                 <TabsTrigger value="addresses" className="data-[state=active]:bg-background rounded-md font-semibold text-xs md:text-sm">
                   <MapPin className="h-3 md:h-5 w-3 md:w-5 mr-1 md:mr-2" />
@@ -156,13 +233,13 @@ export default function Profile() {
                 </TabsTrigger>
                 <TabsTrigger value="wishlist" className="data-[state=active]:bg-background rounded-md font-semibold text-xs md:text-sm">
                   <Heart className="h-3 md:h-5 w-3 md:w-5 mr-1 md:mr-2" />
-                  <span className="hidden sm:inline">Wishlist ({wishlist.length})</span>
-                  <span className="sm:hidden">{wishlist.length}</span>
+                  <span className="hidden sm:inline">Wishlist</span>
+                  <span className="sm:hidden">❤️</span>
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="orders" className="space-y-3 md:space-y-4 mt-4 md:mt-8">
-                {orders.length === 0 ? (
+                {orders.filter(o => o.status !== 'completed').length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -171,8 +248,8 @@ export default function Profile() {
                     <Card className="bg-card border-border">
                       <CardContent className="py-8 md:py-12 text-center px-3 md:px-6">
                         <ShoppingBag className="h-12 md:h-16 w-12 md:w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                        <p className="text-muted-foreground text-sm md:text-lg">No orders yet</p>
-                        <p className="text-muted-foreground mb-4 md:mb-6 text-xs md:text-base">Start shopping to see your orders here!</p>
+                        <p className="text-muted-foreground text-sm md:text-lg">No active orders</p>
+                        <p className="text-muted-foreground mb-4 md:mb-6 text-xs md:text-base">All your orders are completed! Check the Completed tab to rate and review.</p>
                         <Link to="/shop">
                           <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs md:text-sm">
                             Continue Shopping
@@ -184,7 +261,7 @@ export default function Profile() {
                   </motion.div>
                 ) : (
                   <div className="space-y-2 md:space-y-4">
-                    {orders.map((order, i) => (
+                    {orders.filter(o => o.status !== 'completed').map((order, i) => (
                       <motion.div
                         key={order.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -249,6 +326,134 @@ export default function Profile() {
                               </Button>
                             </div>
                           </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="completed" className="space-y-3 md:space-y-4 mt-4 md:mt-8">
+                {orders.filter(o => o.status === 'completed').length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <Card className="bg-card border-border">
+                      <CardContent className="py-8 md:py-12 text-center px-3 md:px-6">
+                        <Package className="h-12 md:h-16 w-12 md:w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                        <p className="text-muted-foreground text-sm md:text-lg">No completed orders yet</p>
+                        <p className="text-muted-foreground mb-4 md:mb-6 text-xs md:text-base">Once an order is completed, you can rate and review the products!</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-2 md:space-y-4">
+                    {orders.filter(o => o.status === 'completed').map((order) => (
+                      <motion.div
+                        key={order.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Card className="bg-card border-border hover:border-primary/50 transition-colors">
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle className="text-sm md:text-base">Order #{order.id.slice(0, 8)}</CardTitle>
+                                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                                  {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setExpandedItems(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(order.id)) {
+                                      next.delete(order.id);
+                                    } else {
+                                      next.add(order.id);
+                                      // Load reviews for all items in this order
+                                      order.items.forEach(item => {
+                                        if (!productReviews[item.id]) {
+                                          loadProductReviews(item.id);
+                                        }
+                                      });
+                                    }
+                                    return next;
+                                  });
+                                }}
+                                className="hover:bg-muted"
+                              >
+                                <ChevronDown className={`h-4 w-4 transition-transform ${expandedItems.has(order.id) ? 'rotate-180' : ''}`} />
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          {expandedItems.has(order.id) && (
+                            <CardContent className="space-y-4 pt-0">
+                              <div className="space-y-3">
+                                {order.items.map((item) => (
+                                  <motion.div
+                                    key={item.id}
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    transition={{ duration: 0.3 }}
+                                    className="border-b border-border pb-3 last:border-0 last:pb-0"
+                                  >
+                                    <div className="flex gap-3">
+                                      {item.image && <img src={item.image} alt={item.name} className="h-16 w-16 object-cover rounded" />}
+                                      <div className="flex-1">
+                                        <h4 className="font-semibold text-sm md:text-base">{item.name}</h4>
+                                        <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                                          Qty: {item.quantity} × ₱{item.price.toFixed(2)} = ₱{(item.price * item.quantity).toFixed(2)}
+                                        </p>
+                                        
+                                        {/* Show Rate & Review button only if not already reviewed THIS order's item */}
+                                        {!hasUserReviewedOrderItem(order.id, item.id) && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="mt-2 text-xs md:text-sm"
+                                            onClick={() => {
+                                              setSelectedProduct(item);
+                                              setSelectedOrderForReview(order);
+                                              setShowReviewModal(true);
+                                            }}
+                                          >
+                                            <Star className="h-3 w-3 mr-1" />
+                                            Rate & Review
+                                          </Button>
+                                        )}
+                                        
+                                        {/* Show reviews and edit button */}
+                                        {productReviews[item.id] && productReviews[item.id].length > 0 && (
+                                          <div className="mt-3 pt-3 border-t border-border">
+                                            <p className="text-xs font-semibold mb-2">Your Reviews:</p>
+                                            <ReviewList 
+                                              reviews={productReviews[item.id]} 
+                                              isLoading={false}
+                                              currentUserId={user?.id}
+                                              onEditReview={(review) => {
+                                                setSelectedReviewForEdit(review);
+                                                setShowEditReviewModal(true);
+                                              }}
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                              <div className="bg-muted p-3 rounded text-sm font-semibold flex justify-between items-center">
+                                <span>Total:</span>
+                                <span className="text-primary">₱{order.total.toFixed(2)}</span>
+                              </div>
+                            </CardContent>
+                          )}
                         </Card>
                       </motion.div>
                     ))}
@@ -499,6 +704,86 @@ export default function Profile() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Review Modal */}
+      {selectedProduct && selectedOrderForReview && (
+        <AddReviewModal
+          productId={selectedProduct.id}
+          orderId={selectedOrderForReview.id}
+          userId={user?.id || ''}
+          open={showReviewModal}
+          onOpenChange={(open) => {
+            setShowReviewModal(open);
+            if (!open) {
+              setSelectedProduct(null);
+              setSelectedOrderForReview(null);
+            }
+          }}
+          onReviewSubmitted={() => {
+            if (selectedProduct) {
+              loadProductReviews(selectedProduct.id);
+            }
+            setShowReviewModal(false);
+            setSelectedProduct(null);
+            setSelectedOrderForReview(null);
+            setReviewRefreshTrigger(prev => prev + 1);
+            toast({
+              title: 'Review submitted!',
+              description: 'Your review has been published.',
+            });
+          }}
+        />
+      )}
+
+      {/* Edit Review Modal */}
+      {selectedReviewForEdit && (
+        <EditReviewModal
+          open={showEditReviewModal}
+          onOpenChange={(open) => {
+            setShowEditReviewModal(open);
+            if (!open) {
+              setSelectedReviewForEdit(null);
+            }
+          }}
+          review={selectedReviewForEdit}
+          onReviewUpdated={() => {
+            if (selectedReviewForEdit) {
+              loadProductReviews(selectedReviewForEdit.product_id);
+            }
+            setShowEditReviewModal(false);
+            setSelectedReviewForEdit(null);
+            toast({
+              title: 'Review updated!',
+              description: 'Your review has been updated successfully.',
+            });
+          }}
+        />
+      )}
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        open={showEditProfileModal}
+        onOpenChange={(open) => {
+          setShowEditProfileModal(open);
+          // Reload profile data when modal closes
+          if (!open) {
+            setTimeout(() => {
+              loadProfileData();
+            }, 500);
+          }
+        }}
+        userName={profileName}
+        userPhoto={profilePhoto}
+        userId={user?.id || ''}
+        onProfileUpdated={(name, photo) => {
+          setProfileName(name);
+          setProfilePhoto(photo);
+          // Refresh after update
+          setTimeout(() => {
+            loadProfileData();
+          }, 300);
+        }}
+      />
     </PageWrapper>
   );
 }

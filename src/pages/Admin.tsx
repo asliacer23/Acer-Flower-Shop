@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, DollarSign, TrendingUp, Plus, Pencil, Trash2, ShoppingBag, MapPin, Eye } from 'lucide-react';
+import { Package, DollarSign, TrendingUp, Plus, Pencil, Trash2, ShoppingBag, MapPin, Eye, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageWrapper } from '@/components/layout/PageWrapper';
+import { AdminChatDashboard } from '@/components/chat/AdminChatDashboard';
 import { useAuth } from '@/context/AuthContext';
 import { Order, Product } from '@/types';
 import { getOrders, updateOrderStatus } from '@/services/orders';
@@ -238,7 +239,7 @@ export default function Admin() {
 
         {/* Tabs for Orders and Products */}
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3 md:w-auto md:grid-cols-3">
             <TabsTrigger value="orders" className="text-xs md:text-sm">
               <Package className="h-3 md:h-4 w-3 md:w-4 mr-1 md:mr-2" />
               <span className="hidden sm:inline">Orders</span>
@@ -248,6 +249,11 @@ export default function Admin() {
               <ShoppingBag className="h-3 md:h-4 w-3 md:w-4 mr-1 md:mr-2" />
               <span className="hidden sm:inline">Products</span>
               <span className="sm:hidden">Prod.</span>
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="text-xs md:text-sm">
+              <MessageSquare className="h-3 md:h-4 w-3 md:w-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Chat</span>
+              <span className="sm:hidden">Chat</span>
             </TabsTrigger>
           </TabsList>
 
@@ -384,6 +390,17 @@ export default function Admin() {
                     </Card>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="chat">
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Support Chat</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AdminChatDashboard />
               </CardContent>
             </Card>
           </TabsContent>

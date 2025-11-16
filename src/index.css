@@ -4,6 +4,28 @@
 
 @layer base {
   :root {
+
+    /* Floating Label */
+    .floating-label {
+      @apply absolute -top-2 left-2 bg-background px-1 text-xs text-muted-foreground transition-all 
+      peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm 
+      peer-focus:-top-2 peer-focus:text-xs;
+    }
+
+    .shake {
+      animation: shakeAnim 0.4s ease-in-out;
+    }
+
+    @keyframes shakeAnim {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+      100% { transform: translateX(0); }
+    }
+
+
     /* Light mode: Black, White, and Dark Blue (00172D) */
     --background: 0 0% 98%;
     --foreground: 0 0% 8%;

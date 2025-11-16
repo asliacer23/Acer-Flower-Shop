@@ -60,3 +60,53 @@ export interface Address {
 }
 
 export type UserRole = 'guest' | 'buyer' | 'admin';
+
+// ===== NEW FEATURE 1: Terms Agreement =====
+export interface TermsAgreement {
+  id: string;
+  user_id: string;
+  accepted_at: string;
+  version: string;
+  ip_address?: string;
+}
+
+// ===== NEW FEATURE 2: Product Reviews =====
+export interface ProductReview {
+  id: string;
+  user_id: string;
+  product_id: string;
+  order_id: string;
+  rating: number; // 1-5
+  comment?: string;
+  created_at: string;
+}
+
+export interface ReviewWithUserInfo extends ProductReview {
+  user_name: string;
+  user_email: string;
+}
+
+// ===== NEW FEATURE 3: Customer Support Chat =====
+export interface Conversation {
+  id: string;
+  user_id: string;
+  status: 'open' | 'unread' | 'resolved';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  sender: 'user' | 'admin';
+  sender_id: string;
+  text?: string;
+  image_url?: string;
+  created_at: string;
+}
+
+export interface ConversationWithMessages extends Conversation {
+  messages: ChatMessage[];
+  user_name?: string;
+  user_email?: string;
+}

@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { addToWishlist, removeFromWishlist, isInWishlist } from '@/services/wishlist';
 import { motion } from 'framer-motion';
+import { ItemReviews } from '@/components/reviews/ItemReviews';
 
 export default function Product() {
   const { id } = useParams<{ id: string }>();
@@ -333,49 +334,16 @@ export default function Product() {
               </div>
             </motion.div>
 
-            {/* Features */}
+            {/* Reviews Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
               className="space-y-4 pt-8 border-t border-border"
             >
-              <h3 className="text-lg font-bold text-foreground">Why Choose This Product</h3>
-              {[
-                {
-                  icon: Truck,
-                  title: 'Fast Delivery',
-                  desc: 'Same-day delivery available for orders before 2 PM',
-                },
-                {
-                  icon: Package,
-                  title: 'Fresh Guarantee',
-                  desc: '7-day freshness guarantee on all flowers',
-                },
-                {
-                  icon: Shield,
-                  title: 'Secure Payment',
-                  desc: 'Your payment and data are fully protected',
-                },
-              ].map((feature, i) => {
-                const Icon = feature.icon;
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + i * 0.1 }}
-                    className="flex items-start gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <Icon className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-foreground">{feature.title}</p>
-                      <p className="text-sm text-muted-foreground">{feature.desc}</p>
-                    </div>
-                    <Check className="h-5 w-5 text-primary ml-auto flex-shrink-0 mt-1" />
-                  </motion.div>
-                );
-              })}
+              {product && (
+                <ItemReviews productId={product.id} userId={user?.id} />
+              )}
             </motion.div>
           </motion.div>
         </div>
